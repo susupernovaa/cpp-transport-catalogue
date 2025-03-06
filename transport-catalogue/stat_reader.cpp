@@ -16,23 +16,24 @@ void ParseAndPrintStat(const TransportCatalogue& transport_catalogue, std::strin
     auto request_type = request.substr(0, space);
     auto text = request.substr(space + 1);
     if (request_type == "Bus"sv) {
-        details::BusInfo data = transport_catalogue.GetBusInfo(text);
-        if (data == details::BusInfo{0, 0, 0.}) {
+        auto data = transport_catalogue.GetBusInfo(text);
+        if (!data) {
             output << request << ": not found"s << std::endl;
         } else {
-            output << request << ": "s << data.stops << " stops on route, "s << data.unique_stops << 
-            " unique stops, "s << data.route_length << " route length "s << std::endl;
+            output << request << ": "s << data.value().stops << " stops on route, "s << 
+            data.value().unique_stops << " unique stops, "s << 
+            data.value().route_length << " route length "s << std::endl;
         }
     }
     if (request_type == "Stop"sv) {
-        auto stop_info = transport_catalogue.GetStopInfo(text);
-        if (!stop_info) {
+        const auto* stop_info = transport_catalogue.GetStopInfo(text);
+        if (stop_info == nullptr) {
             output << request << ": not found"s << std::endl;
-        } else if (stop_info.value().empty()) {
+        } else if ((*stop_info).empty()) {
             output << request << ": no buses"s << std::endl;
         } else {
             output << request << ": buses "s;
-            for (const auto& info : stop_info.value()) {
+            for (const auto& info : *stop_info) {
                 output << info << ' ';
             }
             output << std::endl;

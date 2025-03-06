@@ -107,7 +107,7 @@ void InputReader::ParseLine(std::string_view line) {
     }
 }
 
-void InputReader::ApplyCommands([[maybe_unused]] TransportCatalogue& catalogue) const {
+void InputReader::ApplyCommands(TransportCatalogue& catalogue) const {
     using namespace std::literals;
     if (commands_.empty()) {
         return;
@@ -122,7 +122,6 @@ void InputReader::ApplyCommands([[maybe_unused]] TransportCatalogue& catalogue) 
             std::vector<const Stop*> busroute;
             for (const auto& stop : ParseRoute(Trim(c.description))) {
                 busroute.push_back(catalogue.GetStop(stop));
-                catalogue.AddBusToStopIndex(catalogue.GetStop(stop), c.id);
             }
             catalogue.AddBus(Bus{std::move(c.id), std::move(busroute)});
         }

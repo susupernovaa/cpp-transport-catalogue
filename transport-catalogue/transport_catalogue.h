@@ -22,8 +22,6 @@ struct Bus {
 	std::vector<const Stop*> busroute;
 };
 
-namespace details {
-
 struct BusInfo {
 	bool operator==(const BusInfo& other) const {
         return stops == other.stops && unique_stops == other.unique_stops && 
@@ -37,23 +35,19 @@ struct BusInfo {
 	double route_length;
 };
 
-}
-
 class TransportCatalogue {
 public:
-	void AddStop(const Stop& stop);
+	void AddStop(Stop stop);
 
-	void AddBus(const Bus& bus);
-
-	void AddBusToStopIndex(const Stop* stop, std::string_view busname);
+	void AddBus(Bus bus);
 
 	const Stop* GetStop(std::string_view stopname) const;
 
 	const Bus* GetBus(std::string_view busname) const;
 
-	details::BusInfo GetBusInfo(std::string_view busname) const;
+	std::optional<BusInfo> GetBusInfo(std::string_view busname) const;
 
-	std::optional<std::set<std::string>> GetStopInfo(std::string_view stopname) const;
+	const std::set<std::string>* GetStopInfo(std::string_view stopname) const;
 	
 private:
 	std::deque<Stop> stops_;
