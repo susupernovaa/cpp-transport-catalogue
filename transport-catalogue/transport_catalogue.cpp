@@ -1,5 +1,6 @@
 #include "transport_catalogue.h"
 
+#include <iostream>
 #include <algorithm>
 #include <utility>
 #include <unordered_set>
@@ -24,7 +25,7 @@ void TransportCatalogue::AddBus(Bus bus) {
 }
 
 const Stop* TransportCatalogue::GetStop(std::string_view stopname) const {
-    auto it = std::find(stopname_to_stop.begin(), stopname_to_stop.end(), stopname);
+    auto it = stopname_to_stop.find(stopname);
     if (it != stopname_to_stop.end()) {
         return it->second;
     }
@@ -32,7 +33,7 @@ const Stop* TransportCatalogue::GetStop(std::string_view stopname) const {
 }
 
 const Bus* TransportCatalogue::GetBus(std::string_view busname) const {
-    auto it = std::find(busname_to_bus.begin(), busname_to_bus.end(), busname);
+    auto it = busname_to_bus.find(busname);
     if (it != busname_to_bus.end()) {
         return it->second;
     }
@@ -40,23 +41,28 @@ const Bus* TransportCatalogue::GetBus(std::string_view busname) const {
 }
 
 std::optional<BusInfo> TransportCatalogue::GetBusInfo(std::string_view busname) const {
-    size_t stops = 0;
-    size_t unique_stops = 0;
-    double route_length = 0.;
-    if (GetBus(busname) != nullptr) {
+    if (GetBus(busname) == nullptr) {
         return {};
     }
     const Bus* bus = busname_to_bus.at(busname);
-    stops = bus->busroute.size();
+    size_t stops = bus->busroute.size();
     std::unordered_set<const Stop*> unique_stops_set;
     const Stop* prev = bus->busroute[0];
+    double geo_l = 0.;
+    double l = 0.;
+    bool is_first = true;
     for (const auto* stop : bus->busroute) {
         unique_stops_set.insert(stop);
-        route_length += ComputeDistance(prev->coordinates, stop->coordinates);
+        geo_l += ComputeDistance(prev->coordinates, stop->coordinates);
+        l += GetDistance(prev->stopname, stop->stopname);
+        if (!is_first) {
+            l += GetDistance(stop->stopname, stop->stopname);
+        }
         prev = stop;
+        is_first = false;
     }
-    unique_stops = unique_stops_set.size();
-    return BusInfo{stops, unique_stops, route_length};
+    size_t unique_stops = unique_stops_set.size();
+    return BusInfo{stops, unique_stops, l, l / geo_l};
 }
 
 const std::set<std::string>* TransportCatalogue::GetStopInfo(std::string_view stopname) const {
@@ -69,6 +75,25 @@ const std::set<std::string>* TransportCatalogue::GetStopInfo(std::string_view st
         return &empty_set;
     }
     return &stopname_to_buses.at(stop);
+}
+
+void TransportCatalogue::AddDistances(std::string_view stopname1, 
+    std::unordered_map<std::string, int> stopnames_to_distances) {
+        const auto* stop1 = GetStop(stopname1);
+        for (const auto& [stopname2, distance] : stopnames_to_distances) {
+            const auto* stop2 = GetStop(stopname2);
+            stops_to_distances_[{stop1, stop2}] = distance;
+        }
+}
+
+int TransportCatalogue::GetDistance(std::string_view stopname1, std::string_view stopname2) const {
+    const auto* stop1 = GetStop(stopname1);
+    const auto* stop2 = GetStop(stopname2);
+    auto it = stops_to_distances_.find({stop1, stop2});
+    if (it == stops_to_distances_.end()) {
+        it = stops_to_distances_.find({stop2, stop1});
+    }
+    return it != stops_to_distances_.end() ? it->second : 0;
 }
 
 }

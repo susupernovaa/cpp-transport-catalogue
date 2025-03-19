@@ -22,7 +22,8 @@ void ParseAndPrintStat(const TransportCatalogue& transport_catalogue, std::strin
         } else {
             output << request << ": "s << data.value().stops << " stops on route, "s << 
             data.value().unique_stops << " unique stops, "s << 
-            data.value().route_length << " route length "s << std::endl;
+            data.value().route_length << " route length, "s << 
+            data.value().curvature << " curvature"s << std::endl;
         }
     }
     if (request_type == "Stop"sv) {

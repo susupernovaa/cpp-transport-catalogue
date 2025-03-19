@@ -22,9 +22,10 @@ Coordinates ParseCoordinates(std::string_view str) {
     }
 
     auto not_space2 = str.find_first_not_of(' ', comma + 1);
+    auto comma2 = str.find(',', not_space2);
 
     double lat = std::stod(std::string(str.substr(not_space, comma - not_space)));
-    double lng = std::stod(std::string(str.substr(not_space2)));
+    double lng = std::stod(std::string(str.substr(not_space2, comma2 - not_space2)));
 
     return {lat, lng};
 }
@@ -79,6 +80,24 @@ std::vector<std::string_view> ParseRoute(std::string_view route) {
     return results;
 }
 
+std::unordered_map<std::string, int> ParseDistances(std::string_view string) {
+    auto str = std::string_view(string.substr(string.find(',') + 1));
+    auto comma2 = str.find(',');
+    auto s = str.substr(comma2 + 1);
+    auto distance_to_name = Split(s, ',');
+    std::unordered_map<std::string, int> result;
+    for (const auto& line : distance_to_name) {
+        auto not_space = line.find_first_not_of(' ');
+        auto m_pos = line.find('m');
+        int d = std::stoi(std::string(line.substr(not_space, m_pos - not_space)));
+
+        std::string name = std::string(Trim(line.substr(line.find('o') + 1)));
+
+        result.insert({std::move(name), d});
+    }
+    return result;
+} 
+
 CommandDescription ParseCommandDescription(std::string_view line) {
     auto colon_pos = line.find(':');
     if (colon_pos == line.npos) {
@@ -118,6 +137,9 @@ void InputReader::ApplyCommands(TransportCatalogue& catalogue) const {
         }
     }
     for (const auto& c : commands_) {
+        if (c.command == "Stop"s) {
+            catalogue.AddDistances(std::move(c.id), ParseDistances(c.description));
+        }
         if (c.command == "Bus"s) {
             std::vector<const Stop*> busroute;
             for (const auto& stop : ParseRoute(Trim(c.description))) {
