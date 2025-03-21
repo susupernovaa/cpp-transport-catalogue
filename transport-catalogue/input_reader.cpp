@@ -138,7 +138,7 @@ void InputReader::ApplyCommands(TransportCatalogue& catalogue) const {
     }
     for (const auto& c : commands_) {
         if (c.command == "Stop"s) {
-            catalogue.AddDistances(std::move(c.id), ParseDistances(c.description));
+            catalogue.AddMapOfDistances(std::move(c.id), ParseDistances(c.description));
         }
         if (c.command == "Bus"s) {
             std::vector<const Stop*> busroute;

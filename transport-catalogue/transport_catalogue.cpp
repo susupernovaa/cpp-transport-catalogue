@@ -77,16 +77,21 @@ const std::set<std::string>* TransportCatalogue::GetStopInfo(std::string_view st
     return &stopname_to_buses.at(stop);
 }
 
-void TransportCatalogue::AddDistances(std::string_view stopname1, 
-    std::unordered_map<std::string, int> stopnames_to_distances) {
+void TransportCatalogue::AddDistance(std::string_view stopname1, 
+    std::string_view stopname2, int distance) {
         const auto* stop1 = GetStop(stopname1);
-        for (const auto& [stopname2, distance] : stopnames_to_distances) {
-            const auto* stop2 = GetStop(stopname2);
-            if (stop1 != nullptr && stop2 != nullptr) {
-                stops_to_distances_[{stop1, stop2}] = distance;
-            }
+        const auto* stop2 = GetStop(stopname2);
+        if (stop1 != nullptr && stop2 != nullptr) {
+            stops_to_distances_[{stop1, stop2}] = distance;
         }
-}
+    }
+
+void TransportCatalogue::AddMapOfDistances(std::string_view stopname1, 
+    std::unordered_map<std::string, int> stopnames_to_distances) {
+        for (const auto& [stopname2, distance] : stopnames_to_distances) {
+            AddDistance(stopname1, stopname2, distance);
+        }
+    }
 
 int TransportCatalogue::GetDistance(std::string_view stopname1, std::string_view stopname2) const {
     const auto* stop1 = GetStop(stopname1);

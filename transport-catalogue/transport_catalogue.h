@@ -57,7 +57,9 @@ public:
 
 	const std::set<std::string>* GetStopInfo(std::string_view stopname) const;
 
-	void AddDistances(std::string_view stopname, 
+	void AddDistance(std::string_view stopname1, std::string_view stopname2, int distance);
+
+	void AddMapOfDistances(std::string_view stopname, 
 		std::unordered_map<std::string, int> stopnames_to_distances);
 
 	int GetDistance(std::string_view stopname1, std::string_view stopname2) const;
