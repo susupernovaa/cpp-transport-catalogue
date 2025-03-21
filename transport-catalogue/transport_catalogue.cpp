@@ -41,10 +41,10 @@ const Bus* TransportCatalogue::GetBus(std::string_view busname) const {
 }
 
 std::optional<BusInfo> TransportCatalogue::GetBusInfo(std::string_view busname) const {
-    if (GetBus(busname) == nullptr) {
+    const Bus* bus = GetBus(busname);
+    if (bus == nullptr) {
         return {};
     }
-    const Bus* bus = busname_to_bus.at(busname);
     size_t stops = bus->busroute.size();
     std::unordered_set<const Stop*> unique_stops_set;
     const Stop* prev = bus->busroute[0];
@@ -82,7 +82,9 @@ void TransportCatalogue::AddDistances(std::string_view stopname1,
         const auto* stop1 = GetStop(stopname1);
         for (const auto& [stopname2, distance] : stopnames_to_distances) {
             const auto* stop2 = GetStop(stopname2);
-            stops_to_distances_[{stop1, stop2}] = distance;
+            if (stop1 != nullptr && stop2 != nullptr) {
+                stops_to_distances_[{stop1, stop2}] = distance;
+            }
         }
 }
 
