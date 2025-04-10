@@ -1,35 +1,18 @@
-#include <iostream>
-#include <string>
+#include "json_reader.h"
+#include "map_renderer.h"
+#include "request_handler.h"
+
 #include <fstream>
-
-#include "input_reader.h"
-#include "stat_reader.h"
-
-using namespace std;
-using namespace transport_catalogue;
+#include <iostream>
 
 int main() {
+    using namespace transport_catalogue;
+    json_processing::JsonReader reader;
     TransportCatalogue catalogue;
-    std::ifstream input;
-    input.open("input.txt");
-    int base_request_count;
-    input >> base_request_count >> ws;
-
-    {
-        text_processing::InputReader reader;
-        for (int i = 0; i < base_request_count; ++i) {
-            string line;
-            getline(input, line);
-            reader.ParseLine(line);
-        }
-        reader.ApplyCommands(catalogue);
-    }
-
-    int stat_request_count;
-    input >> stat_request_count >> ws;
-    for (int i = 0; i < stat_request_count; ++i) {
-        string line;
-        getline(input, line);
-        text_processing::ParseAndPrintStat(catalogue, line, cout);
-    }
+    reader.ParseInput(std::cin);
+    reader.FillBase(catalogue);
+    renderer::MapRenderer renderer(reader.GetRenderSettings(), catalogue.GetAllCoordinates());
+    RequestHandler handler{catalogue, renderer};
+    json_processing::JsonPrinter printer{handler, reader.GetStatRequests()};
+    printer.PrintStats(std::cout);
 }
