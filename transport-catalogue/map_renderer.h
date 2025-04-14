@@ -109,7 +109,7 @@ private:
 
 class MapRenderer {
 public:
-    explicit MapRenderer(RenderSettings settings, std::vector<geo::Coordinates> coords);
+    explicit MapRenderer(const RenderSettings& settings, const std::vector<geo::Coordinates>& coords);
 
     const svg::Document* RenderRoutes(const std::deque<Bus>& buses, const std::deque<Stop>& stops);
 
@@ -118,13 +118,13 @@ private:
     SphereProjector proj_;
     svg::Document map_;
 
-    SphereProjector SetProjector(std::vector<geo::Coordinates> coords);
+    SphereProjector SetProjector(const std::vector<geo::Coordinates>& coords);
 
     void AddRoute(const Bus& bus, const svg::Color& color);
 
-    svg::Text RenderBusname(const std::string busname, const Stop* stop, const svg::Color& color = "none") const;
+    svg::Text RenderBusname(const std::string& busname, const Stop& stop, const svg::Color& color = "none") const;
 
-    svg::Text RenderBusnameUnderlayer(const std::string& busname, const Stop* stop) const;
+    svg::Text RenderBusnameUnderlayer(const std::string& busname, const Stop& stop) const;
 
     void AddBusnames(const Bus& bus, const svg::Color& color);
 

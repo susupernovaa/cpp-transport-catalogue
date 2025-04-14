@@ -4,7 +4,7 @@ namespace transport_catalogue {
 
 namespace renderer {
 
-MapRenderer::MapRenderer(RenderSettings settings, std::vector<geo::Coordinates> coords) 
+MapRenderer::MapRenderer(const RenderSettings& settings, const std::vector<geo::Coordinates>& coords) 
     : settings_(settings), proj_(SetProjector(coords)) {
 }
 
@@ -36,7 +36,7 @@ const svg::Document* MapRenderer::RenderRoutes(const std::deque<Bus>& buses, con
     return &map_;
 }
 
-SphereProjector MapRenderer::SetProjector(std::vector<geo::Coordinates> coords) {
+SphereProjector MapRenderer::SetProjector(const std::vector<geo::Coordinates>& coords) {
     return SphereProjector{coords.begin(), coords.end(), 
         settings_.width, settings_.height, settings_.padding};
 }
@@ -52,15 +52,15 @@ void MapRenderer::AddRoute(const Bus& bus, const svg::Color& color) {
     map_.Add(std::move(route));
 }
 
-svg::Text MapRenderer::RenderBusname(const std::string busname, const Stop* stop, const svg::Color& color) const {
+svg::Text MapRenderer::RenderBusname(const std::string& busname, const Stop& stop, const svg::Color& color) const {
     svg::Text result;
-    result.SetPosition(proj_(stop->coordinates)).SetOffset(settings_.bus_label_offset);
+    result.SetPosition(proj_(stop.coordinates)).SetOffset(settings_.bus_label_offset);
     result.SetFontSize(settings_.bus_label_font_size).SetFontFamily(settings_.font_family);
     result.SetFontWeight(settings_.font_weight).SetData(busname).SetFillColor(color);
     return result;
 }
 
-svg::Text MapRenderer::RenderBusnameUnderlayer(const std::string& busname, const Stop* stop) const {
+svg::Text MapRenderer::RenderBusnameUnderlayer(const std::string& busname, const Stop& stop) const {
     using namespace svg;
     Text result = RenderBusname(busname, stop);
     result.SetFillColor(settings_.underlayer_color).SetStrokeColor(settings_.underlayer_color);
@@ -71,14 +71,13 @@ svg::Text MapRenderer::RenderBusnameUnderlayer(const std::string& busname, const
 
 void MapRenderer::AddBusnames(const Bus& bus, const svg::Color& color) {
     using namespace svg;
-    const Stop* stop = bus.busroute.front();
-    map_.Add(RenderBusnameUnderlayer(bus.busname, stop));
-    map_.Add(RenderBusname(bus.busname, stop, color));
-    if (!bus.is_roundtrip && bus.busroute.at(bus.busroute.size() / 2)->stopname != 
-        bus.busroute.front()->stopname) {
-            const Stop* stop = bus.busroute.at(bus.busroute.size() / 2);
-            map_.Add(RenderBusnameUnderlayer(bus.busname, stop));
-            map_.Add(RenderBusname(bus.busname, stop, color));
+    auto first_stop = bus.busroute.front();
+    map_.Add(RenderBusnameUnderlayer(bus.busname, *first_stop));
+    map_.Add(RenderBusname(bus.busname, *first_stop, color));
+    auto final_stop = bus.busroute.at(bus.busroute.size() / 2);
+    if (!bus.is_roundtrip && final_stop->stopname != first_stop->stopname) {
+        map_.Add(RenderBusnameUnderlayer(bus.busname, *final_stop));
+        map_.Add(RenderBusname(bus.busname, *final_stop, color));
     }
 }
 

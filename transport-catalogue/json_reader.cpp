@@ -46,11 +46,11 @@ void JsonReader::FillBase(TransportCatalogue& catalogue) const {
     }
 }
 
-const std::vector<StatRequest> JsonReader::GetStatRequests() const {
+const std::vector<StatRequest>& JsonReader::GetStatRequests() const {
     return stat_requests_;
 }
 
-const renderer::RenderSettings JsonReader::GetRenderSettings() const {
+const renderer::RenderSettings& JsonReader::GetRenderSettings() const {
     return render_settings_;
 }
 
@@ -91,7 +91,7 @@ std::vector<std::string> JsonReader::ParseStops(const json::Node& data) {
     return stops;
 }
 
-void JsonReader::ParseBusRequest(json::Node data) {
+void JsonReader::ParseBusRequest(const json::Node& data) {
     using namespace std::literals;
     BaseBusRequest request;
     for (const auto& [key, value] : data.AsMap()) {
@@ -146,7 +146,7 @@ void JsonReader::ParseStatRequests(const json::Node& stat_requests) {
     } 
 }
 
-std::vector<const Stop*> JsonReader::MakeVectorOfStops(std::vector<std::string> stops, 
+std::vector<const Stop*> JsonReader::MakeVectorOfStops(const std::vector<std::string>& stops, 
         bool is_roundtrip, const TransportCatalogue& catalogue) {
     std::vector<const Stop*> busroute;
     for (const auto& stop : stops) {

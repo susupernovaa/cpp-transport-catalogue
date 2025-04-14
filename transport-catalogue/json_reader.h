@@ -40,9 +40,9 @@ public:
 
     void FillBase(TransportCatalogue& catalogue) const;
 
-    const std::vector<StatRequest> GetStatRequests() const;
+    const std::vector<StatRequest>& GetStatRequests() const;
     
-    const renderer::RenderSettings GetRenderSettings() const;
+    const renderer::RenderSettings& GetRenderSettings() const;
 
 private:
     std::vector<BaseStopRequest> base_stop_requests_;
@@ -56,7 +56,7 @@ private:
 
     static std::vector<std::string> ParseStops(const json::Node& data);
 
-    void ParseBusRequest(json::Node data);
+    void ParseBusRequest(const json::Node& data);
 
     void ParseBaseRequest(const json::Node& request);
 
@@ -66,7 +66,7 @@ private:
 
     void ParseStatRequests(const json::Node& stat_requests);
 
-    static std::vector<const Stop*> MakeVectorOfStops(std::vector<std::string> stops, 
+    static std::vector<const Stop*> MakeVectorOfStops(const std::vector<std::string>& stops, 
         bool is_roundtrip, const TransportCatalogue& catalogue);
 
     void ParseRenderSettings(const json::Node& render_settings);

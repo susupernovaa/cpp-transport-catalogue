@@ -31,32 +31,9 @@ public:
 
     Node() = default;
 
-    Node(std::nullptr_t value) 
-        : value_(value) {
-    }
-
-    Node(int value)
-        : value_(value) {
-    }
-
-    Node(double value) 
-        : value_(value) {
-    }
-
-    Node(bool value) 
-        : value_(value) {
-    }
-
-    Node(std::string value)
-        : value_(move(value)) {
-    }
-
-    Node(Array array)
-        : value_(move(array)) {
-    }
-
-    Node(Dict map)
-        : value_(move(map)) {
+    template <typename T>
+    Node(T value)
+        : value_(std::move(value)) {
     }
 
     bool IsNull() const {
