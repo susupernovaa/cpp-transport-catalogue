@@ -103,12 +103,28 @@ public:
         return std::get<std::string>(value_);
     }
 
+    Array& AsArray() {
+        using namespace std::literals;
+        if (!IsArray()) {
+            throw std::logic_error("Unexpected type access"s);
+        }
+        return std::get<Array>(value_);
+    }
+
     const Array& AsArray() const {
         using namespace std::literals;
         if (!IsArray()) {
             throw std::logic_error("Unexpected type access"s);
         }
         return std::get<Array>(value_);
+    }
+
+    Dict& AsMap() {
+        using namespace std::literals;
+        if (!IsMap()) {
+            throw std::logic_error("Unexpected type access"s);
+        }
+        return std::get<Dict>(value_);
     }
 
     const Dict& AsMap() const {
@@ -118,7 +134,6 @@ public:
         }
         return std::get<Dict>(value_);
     }
-
 
     bool operator==(const Node& other) const {
         return value_ == other.value_;

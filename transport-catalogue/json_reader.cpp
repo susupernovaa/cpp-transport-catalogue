@@ -281,43 +281,44 @@ std::vector<Stat> JsonPrinter::MakeStats(const std::vector<StatRequest>& stat_re
 }
 
 json::Document JsonPrinter::MakeJson() {
-    using namespace json;
     using namespace std::literals;
-    Array result;
-    result.reserve(stats_.size());
+    json::Builder builder;
+    builder.StartArray();
     for (const auto& stat : stats_) {
-        Dict stat_dict;
-        stat_dict.insert({"request_id"s, stat.request_id});
+        builder.StartDict()
+        .Key("request_id"s).Value(stat.request_id);
         if (std::holds_alternative<StopData>(stat.data)) {
             StopData data = std::get<StopData>(stat.data);
             if (!data) {
-                stat_dict.insert({"error_message"s, "not found"s});
+                builder.Key("error_message"s).Value("not found"s);
             } else {
-                Array buses;
+                builder.Key("buses"s)
+                .StartArray();
                 for (const auto& bus : data.value()) {
-                    buses.push_back(bus);
+                    builder.Value(bus);
                 }
-                stat_dict.insert({"buses"s, buses});
+                builder.EndArray();
             }
         } else if (std::holds_alternative<BusData>(stat.data)) {
             BusData data = std::get<BusData>(stat.data);
             if (!data) {
-                stat_dict.insert({"error_message"s, "not found"s});
+                builder.Key("error_message"s).Value("not found"s);
             } else {
-                stat_dict.insert({"stop_count"s, int(data.value().stops)});
-                stat_dict.insert({"unique_stop_count"s, int(data.value().unique_stops)});
-                stat_dict.insert({"route_length"s, data.value().route_length});
-                stat_dict.insert({"curvature"s, data.value().curvature});
+                builder.Key("stop_count"s).Value(int(data.value().stops))
+                .Key("unique_stop_count"s).Value(int(data.value().unique_stops))
+                .Key("route_length"s).Value(data.value().route_length)
+                .Key("curvature"s).Value(data.value().curvature);
             }
         } else if (std::holds_alternative<const svg::Document*>(stat.data)) {
             const auto* data = std::get<const svg::Document*>(stat.data);
             std::ostringstream s;
             data->Render(s);
-            stat_dict.insert({"map"s, s.str()});
-        } 
-        result.push_back(stat_dict);
+            builder.Key("map"s).Value(s.str());
+        }
+        builder.EndDict();
     }
-    return Document(result);
+    builder.EndArray();
+    return json::Document(builder.Build());
 }
 
 } // namespace json_processing
