@@ -12,7 +12,8 @@ int main() {
     reader.ParseInput(std::cin);
     reader.FillBase(catalogue);
     renderer::MapRenderer renderer(reader.GetRenderSettings(), catalogue.GetAllCoordinates());
-    RequestHandler handler{catalogue, renderer};
+    TransportRouteProcessor route_processor(reader.GetRoutingSettings(), catalogue);
+    RequestHandler handler{catalogue, renderer, route_processor};
     json_processing::JsonPrinter printer{handler, reader.GetStatRequests()};
     printer.PrintStats(std::cout);
 }

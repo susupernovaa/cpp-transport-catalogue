@@ -32,6 +32,8 @@ struct StatRequest {
     int id;
     std::string type;
     std::string name;
+    std::string from;
+    std::string to;
 };
 
 class JsonReader {
@@ -44,11 +46,14 @@ public:
     
     const renderer::RenderSettings& GetRenderSettings() const;
 
+    TransportRouteProcessor::RoutingSettings GetRoutingSettings() const;
+
 private:
     std::vector<BaseStopRequest> base_stop_requests_;
     std::vector<BaseBusRequest> base_bus_requests_;
     std::vector<StatRequest> stat_requests_;
     renderer::RenderSettings render_settings_;
+    TransportRouteProcessor::RoutingSettings routing_settings_;
 
     static DistanceInfo ParseDistances(const json::Node& data);
 
@@ -70,14 +75,17 @@ private:
         bool is_roundtrip, const TransportCatalogue& catalogue);
 
     void ParseRenderSettings(const json::Node& render_settings);
+
+    void ParseRoutingSettings(const json::Node& routing_settings);
 };
 
 using StopData = std::optional<std::vector<std::string>>;
 using BusData = std::optional<BusInfo>;
+using RouteData = std::optional<RouteInfo>;
 
 struct Stat {
     int request_id;
-    std::variant<StopData, BusData, const svg::Document*> data;
+    std::variant<StopData, BusData, const svg::Document*, RouteData> data;
 };
 
 class JsonPrinter {
@@ -96,6 +104,8 @@ private:
     Stat ProcessBusRequest(const StatRequest& request);
 
     Stat ProcessMapRequest(const StatRequest& request);
+
+    Stat ProcessRouteRequest(const StatRequest& request);
 
     std::vector<Stat> MakeStats(const std::vector<StatRequest>& stat_requests);
 

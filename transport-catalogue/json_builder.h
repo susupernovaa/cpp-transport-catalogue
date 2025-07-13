@@ -9,7 +9,6 @@ namespace json {
 class Builder {
     class ItemContext;
     class KeyItemContext;
-    class DictValueContext;
     class ValueItemContext;
     class DictItemContext;
     class ArrayItemContext;
@@ -33,7 +32,7 @@ public:
 private:
     Node root_;
     std::vector<Node*> nodes_stack_;
-    std::optional<std::pair<std::string, Node>> cur_pair_;
+    std::optional<std::string> cur_key_;
     bool has_data_ = false;
 
     class ItemContext {
@@ -103,30 +102,6 @@ private:
         Node Build() = delete;
     };
 
-    class DictValueContext : public ItemContext {
-    public:
-        ItemContext& Key(std::string key) = delete;
-
-        DictItemContext Value(Node::Value value) {
-            builder.Value(std::move(value));
-            return DictItemContext{*this};
-        }
-
-        DictItemContext StartDict() {
-            builder.StartDict();
-            return DictItemContext{*this};
-        }
-
-        ArrayItemContext StartArray() {
-            builder.StartArray();
-            return ArrayItemContext{*this};
-        }
-
-        ItemContext& EndDict() = delete;
-        ItemContext& EndArray() = delete;
-        Node Build() = delete;
-    };
-
     class ValueItemContext : public ItemContext {
     public:
         ItemContext& Key(std::string key) = delete;
@@ -143,9 +118,9 @@ private:
 
     class DictItemContext : public ItemContext {
     public:
-        DictValueContext Key(std::string key) {
+        KeyItemContext Key(std::string key) {
             builder.Key(std::move(key));
-            return DictValueContext{*this};
+            return KeyItemContext{*this};
         }
 
         ItemContext& Value(Node::Value value) = delete;
@@ -193,23 +168,7 @@ private:
     void CheckIfFinalized() const;
 
     template <typename T>
-    void AddContainerToStack() {
-        CheckIfFinalized();
-        if (root_.IsNull()) {
-            root_ = T{};
-            nodes_stack_.push_back(&root_);
-        } else {
-            Node* last_node = nodes_stack_.back();
-            if (last_node->IsMap() && cur_pair_) {
-                auto key = cur_pair_->first;
-                Value(T{});
-                nodes_stack_.push_back(&last_node->AsMap().at(key));
-            } else if (last_node->IsArray()) {
-                last_node->AsArray().emplace_back(T{});
-                nodes_stack_.push_back(&last_node->AsArray().back());
-            }
-        }
-    }
+    void AddContainerToStack();
 
     void AddValue(Node value);
 

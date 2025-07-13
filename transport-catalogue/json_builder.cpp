@@ -17,12 +17,12 @@ Builder::ValueItemContext Builder::EndDict() {
 }
 
 Builder::KeyItemContext Builder::Key(std::string key) {
-    cur_pair_.emplace(std::move(key), Node{});;
+    cur_key_ = std::move(key);
     return KeyItemContext{*this};
 }
 
 Builder::ValueItemContext Builder::Value(Node::Value value) {
-    if (!cur_pair_) {
+    if (!cur_key_) {
         AddValue(Node{std::move(value)});
     } else {
         AddDictValue(std::move(value));
@@ -58,6 +58,25 @@ void Builder::CheckIfFinalized() const {
     }
 }
 
+template <typename T>
+void Builder::AddContainerToStack() {
+    CheckIfFinalized();
+    if (root_.IsNull()) {
+        root_ = T{};
+        nodes_stack_.push_back(&root_);
+    } else {
+        Node* last_node = nodes_stack_.back();
+        if (last_node->IsMap() && cur_key_) {
+            auto key = cur_key_.value();
+            Value(T{});
+            nodes_stack_.push_back(&last_node->AsMap().at(key));
+        } else if (last_node->IsArray()) {
+            last_node->AsArray().emplace_back(T{});
+            nodes_stack_.push_back(&last_node->AsArray().back());
+        }
+    }
+}
+
 void Builder::AddValue(Node value) {
     CheckIfFinalized();
     if (root_.IsNull()) {
@@ -70,9 +89,8 @@ void Builder::AddValue(Node value) {
 
 void Builder::AddDictValue(Node::Value value) {
     Node* last_node = nodes_stack_.back();
-    cur_pair_->second = std::move(value);
-    last_node->AsMap().insert(std::move(cur_pair_.value()));
-    cur_pair_ = std::nullopt;
+    last_node->AsMap().emplace(cur_key_.value(), std::move(value));
+    cur_key_ = std::nullopt;
 }
 
 } // namespace json

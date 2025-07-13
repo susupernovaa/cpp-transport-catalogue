@@ -38,6 +38,8 @@ public:
 
 	std::deque<Bus> GetAllBuses() const;
 
+	std::deque<Stop> GetAllStops() const;
+
 	std::deque<Stop> GetAllStopsInRoutes() const;
 
 private:

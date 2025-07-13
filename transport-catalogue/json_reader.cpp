@@ -22,6 +22,8 @@ void JsonReader::ParseInput(std::istream& input) {
             ParseStatRequests(value);
         } else if (key == "render_settings"s) {
             ParseRenderSettings(value);
+        } else if (key == "routing_settings") {
+            ParseRoutingSettings(value);
         }
     }
 }
@@ -52,6 +54,10 @@ const std::vector<StatRequest>& JsonReader::GetStatRequests() const {
 
 const renderer::RenderSettings& JsonReader::GetRenderSettings() const {
     return render_settings_;
+}
+
+TransportRouteProcessor::RoutingSettings JsonReader::GetRoutingSettings() const {
+    return routing_settings_;
 }
 
 DistanceInfo JsonReader::ParseDistances(const json::Node& data) {
@@ -135,6 +141,10 @@ void JsonReader::ParseStatRequest(const json::Node& request_data) {
             request.type = value.AsString();
         } else if (key == "name"s) {
             request.name = value.AsString();
+        } else if (key == "from"s) {
+            request.from = value.AsString(); 
+        } else if (key == "to"s) {
+            request.to = value.AsString();
         }
     }
     stat_requests_.push_back(std::move(request));
@@ -220,6 +230,17 @@ void JsonReader::ParseRenderSettings(const json::Node& render_settings) {
     }
 }
 
+void JsonReader::ParseRoutingSettings(const json::Node& routing_settings) {
+    using namespace std::literals;
+    for (const auto& [key, value] : routing_settings.AsMap()) {
+        if (key == "bus_wait_time"s) {
+            routing_settings_.bus_wait_time = value.AsInt();
+        } else if (key == "bus_velocity"s) {
+            routing_settings_.bus_velocity = value.AsInt();
+        }
+    }
+}
+
 JsonPrinter::JsonPrinter(RequestHandler& request_handler, 
     const std::vector<StatRequest>& stat_requests) 
     : request_handler_(&request_handler), stats_(MakeStats(stat_requests)) {
@@ -265,6 +286,14 @@ Stat JsonPrinter::ProcessMapRequest(const StatRequest& request) {
     return Stat{request.id, data};
 }
 
+Stat JsonPrinter::ProcessRouteRequest(const StatRequest& request) {
+    const auto route_info = request_handler_->GetRoute(request.from, request.to);
+    if (!route_info) {
+        return Stat{request.id, RouteData{}};
+    }
+    return Stat{request.id, route_info};
+}
+
 std::vector<Stat> JsonPrinter::MakeStats(const std::vector<StatRequest>& stat_requests) {
     using namespace std::literals;
     std::vector<Stat> result;
@@ -275,6 +304,8 @@ std::vector<Stat> JsonPrinter::MakeStats(const std::vector<StatRequest>& stat_re
             result.push_back(ProcessBusRequest(request));
         } else if (request.type == "Map"s) {
             result.push_back(ProcessMapRequest(request));
+        } else if (request.type == "Route"s) {
+            result.push_back(ProcessRouteRequest(request));
         }
     }
     return result;
@@ -314,6 +345,33 @@ json::Document JsonPrinter::MakeJson() {
             std::ostringstream s;
             data->Render(s);
             builder.Key("map"s).Value(s.str());
+        } else if (std::holds_alternative<RouteData>(stat.data)) {
+            RouteData data = std::get<RouteData>(stat.data);
+            if (!data) {
+                builder.Key("error_message"s).Value("not found"s);
+            } else {
+                builder.Key("total_time"s).Value(data.value().total_time)
+                .Key("items"s).StartArray();
+                for (const auto& item : data.value().items) {
+                    if (std::holds_alternative<WaitItem>(item)) {
+                        WaitItem wait_item = std::get<WaitItem>(item);
+                        builder.StartDict()
+                        .Key("type"s).Value("Wait"s)
+                        .Key("stop_name"s).Value(std::move(wait_item.stopname))
+                        .Key("time"s).Value(wait_item.time)
+                        .EndDict();
+                    } else {
+                        BusItem bus_item = std::get<BusItem>(item);
+                        builder.StartDict()
+                        .Key("type"s).Value("Bus"s)
+                        .Key("bus"s).Value(std::move(bus_item.busname))
+                        .Key("span_count"s).Value(bus_item.span_count)
+                        .Key("time"s).Value(bus_item.time)
+                        .EndDict();
+                    }
+                }
+                builder.EndArray();
+            }
         }
         builder.EndDict();
     }

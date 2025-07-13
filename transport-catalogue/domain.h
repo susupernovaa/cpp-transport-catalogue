@@ -3,7 +3,9 @@
 #include "geo.h"
 
 #include <string>
+#include <string_view>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 namespace transport_catalogue {
@@ -40,5 +42,23 @@ struct StopDistHasher {
 };
 
 using DistancesContainer = std::unordered_map<std::pair<const Stop*, const Stop*>, int, StopDistHasher>;
+
+struct WaitItem {
+    std::string stopname;
+    double time = 0.0;
+};
+
+struct BusItem {
+    std::string busname;
+    int span_count = 0;
+    double time = 0.0;
+};
+
+using Item = std::variant<WaitItem, BusItem>;
+
+struct RouteInfo {
+    double total_time = 0.0;
+    std::vector<Item> items;
+};
 
 } // namespace transport_catalogue

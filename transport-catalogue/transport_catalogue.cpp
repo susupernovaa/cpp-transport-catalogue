@@ -48,15 +48,18 @@ std::optional<BusInfo> TransportCatalogue::GetBusInfo(std::string_view busname) 
     size_t stops = bus->busroute.size();
     std::unordered_set<const Stop*> unique_stops_set;
     const Stop* prev = bus->busroute[0];
-    double geo_l = 0.;
-    double l = 0.;
+    double geo_l = 0.0;
+    double l = 0.0;
     bool is_first = true;
     for (const auto* stop : bus->busroute) {
         unique_stops_set.insert(stop);
         geo_l += ComputeDistance(prev->coordinates, stop->coordinates);
         l += GetDistance(prev->stopname, stop->stopname);
-        if (!is_first) {
+        if (!is_first && prev != stop) {
             l += GetDistance(stop->stopname, stop->stopname);
+        }
+        if (prev == stop) {
+            l -= GetDistance(stop->stopname, stop->stopname);
         }
         prev = stop;
         is_first = false;
@@ -120,6 +123,10 @@ std::deque<Bus> TransportCatalogue::GetAllBuses() const {
         return lhs.busname < rhs.busname;
     });
     return result;
+}
+
+std::deque<Stop> TransportCatalogue::GetAllStops() const {
+    return stops_;
 }
 
 std::deque<Stop> TransportCatalogue::GetAllStopsInRoutes() const {
